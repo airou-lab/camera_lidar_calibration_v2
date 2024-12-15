@@ -94,8 +94,3 @@ Tcl: The result is the extrinsic parameters from the lidar to the camera, which 
 ```
 
 ![reprojection](results/optimization_result_2.png)
-
-
-## Step 4
-
-Now you can see the calibration result in `data/calibration_result.txt`
