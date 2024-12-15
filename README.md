@@ -12,6 +12,8 @@ This repository can calibrate both lidar and radar with a camera. However, for t
 - **Camera**: Intel RealSense D435i
 - **Lidar**: YDLIDAR X4PRO (2D)
 
+<img src="results/arcpro2.png" alt="Description" width="500" />
+
 
 # Prerequisites
 
