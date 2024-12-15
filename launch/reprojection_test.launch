@@ -7,7 +7,7 @@
     </node>
     <param name="calib_result_path" value="$(find camera_laser_calibration)/data/calibration_result.txt"/>
 
-    <param name="image_topic" value="/xp2s/left/image_raw"/>
+    <param name="image_topic" value="/camera/color/image_raw"/>
     <param name="scan_topic" value="/scan"/>
     <param name="scan_topic" value="/scan"/>
 

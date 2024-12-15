@@ -1,5 +1,3 @@
-## Test
-
 ## Camera Lidar Calibration Tool ROS Version.
 
 ![building](http://progressed.io/bar/91?title=done)

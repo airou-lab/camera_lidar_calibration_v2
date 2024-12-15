@@ -9,7 +9,7 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 
 
-# set(cv_bridge_DIR /usr/local/share/cv_bridge/cmake)
+set(cv_bridge_DIR /usr/local/share/cv_bridge/cmake)
 
 find_package(catkin REQUIRED COMPONENTS
   cv_bridge
@@ -27,6 +27,8 @@ find_package(Eigen3 REQUIRED)
 find_package(OpenCV 3 REQUIRED)
 find_package(Ceres REQUIRED)
 
+
+find_package(PCL REQUIRED)
 
 
 generate_dynamic_reconfigure_options(
@@ -77,7 +79,6 @@ target_link_libraries(${PROJECT_NAME}
         ${CERES_LIBRARIES}
         )
 
-
 add_executable(corner_detecter src/corner_detecter.cc )
 target_link_libraries(corner_detecter ${catkin_LIBRARIES} ${PROJECT_NAME})
 
@@ -89,3 +90,5 @@ target_link_libraries(collect_laser_image_data ${catkin_LIBRARIES} ${PROJECT_NAM
 
 add_executable(reprojection_test src/reprojection_test.cc)
 target_link_libraries(reprojection_test ${catkin_LIBRARIES} ${PROJECT_NAME})
+
+
