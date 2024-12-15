@@ -1,87 +1,96 @@
-## Camera Lidar Calibration Tool ROS Version.
+## Camera-Lidar Calibration Tool ROS Version.
 
-![building](http://progressed.io/bar/91?title=done)
+Author: xinliangzhong (xinliangzhong@foxmail.com)
 
-Author:xinliangzhong(xinliangzhong@foxmail.com)
+![demo0](results/corner_detect_2.png)
 
-![demo0](results/rotation.gif)
 
-![demo](results/demo.gif)
+This repository can calibrate both lidar and radar with a camera. However, for this test, calibration was only performed between the lidar and the camera. For radar-camera calibration, please refer to the [original repository](https://github.com/TurtleZhong/camera_lidar_calibration_v2)(#).
 
-#   怎么使用
-##步骤0：
-将解压包放到一个ros工作空间，并使用以下命令进行编译
+## Hardware Used:
+
+- **Camera**: Intel RealSense D435i
+- **Lidar**: YDLIDAR X4PRO (2D)
+
+
+# Prerequisites
+
+- Ubuntu 16.04 LTS (tested on this specific version)
+- ROS Kinetic
+- OpenCV 3
+- Ceres Solver
+
+# How to Use
+
+## Step 0:
+Place the extracted package into a ROS workspace and compile it using the following command:
 
 ```
 catkin_make --pkg camera_laser_calibration
 ```
 
-如果遇到cv_bridge的错误那请将Cmakelists.txt第12行取消注释
-如果提示ceres未安装，请按照ceres官方指示进行安装操作
+If you encounter an error related to `cv_bridge`, uncomment line 12 in `CMakeLists.txt`.
+If you are prompted that `ceres` is not installed, follow the official instructions to install it.
 
-## 步骤1：
-进入到ros工作空间
+## Step 1:
+Go to your ROS workspace:
 
 ```
 source devel/setup.bash
 ```
 
-然后运行
+Then run:
 
 ```
-roslaunch camera_laser_calibration collect_laser_image_data.launch
+roslaunch camera_laser_calibration collect_laser_image_data.launch image_topic:=PATH_TO_YOUR_DATASET
 ```
-进入到你要用于标定的bag文件目录下 并执行
+
+Navigate to the directory of the bag file you want to use for calibration and execute:
+
 ```
 rosbag play --pause XXX.bag
 ```
 
-此时记得用空格键来控制bag的播放与暂停
+Use the spacebar to control the playback and pause of the bag file.
 
-开启一个新的终端 启动rqt
-选择**Plungs/Configuration/Dynamic Reconfiguration**
+Open a new terminal and start `rqt`.
+Select **Plungs/Configuration/Dynamic Reconfiguration**.
 
-最终你在rviz和rqt将看到以下两个画面表示成功, 其中rviz出现图像和激光彩色线条，rqt中出现控制界面
+Finally, you will see the following two screens in `rviz` and `rqt`, indicating success. In `rviz`, images and laser-colored lines appear, and in `rqt`, the control interface is displayed.
 
 ![](how_to_use_imgs/img1.png)
 
-## 步骤2
+## Step 2
 
-如果你不想看文字，可以直接看根目录下的演示视频 How_to_use.mp4
+If you prefer not to read the text, you can directly watch the demonstration video `How_to_use.mp4` in the root directory.
 
-**暂停bag的播放**
+**Pause the bag playback.**
 
-通过rviz工具栏的 **2D Nav Goal** 去选择激光的点，选择之后会在第一个启动标定程序的终端显示出类似以下的内容
+Use the **2D Nav Goal** tool in the `rviz` toolbar to select laser/scan points. Once selected, the terminal where the calibration program was initially started will display output similar to the following:
 
-
+```
 [ INFO] [1534164489.163120940]: Setting goal: Frame:laser, Position(**1.575, -0.752**, 0.000), Orientation(0.000, 0.000, -0.688, 0.725) = Angle: -1.518
-
-请复制我标粗的部分到粘贴板
-并切换到rqt界面，将其粘贴到laser_coor右边的框中，如果是上面的例子，粘贴完成应该显示1.575, -0.752
-
-**勾选Save按钮**
-此时会弹出当前激光对应的图像，你需要勾选一个小的矩形框，勾选完成后 会弹出检测出坐标点的特征点，然后对着图像窗口按键盘空格键，窗口将消失
-数据将以 **x y u v** 的格式存自动保存在data/data_v2.txt文件夹下
-
-
-## 步骤3
-标定
-将data/data_v2.txt 复制一份变为data.txt
-
-```
-roslaunch camera_laser_calibration calibration.launch
 ```
 
-标定结果
-``Tcl: 结果为激光雷达到相机的外参，它会自动保存到data文件夹下``
+Copy the highlighted portion to the clipboard.
+Switch to the `rqt` interface and paste it into the box next to `laser_coor`. For the above example, after pasting, it should display `1.575, -0.752`.
 
-![reprojection](results/optimization_result.png)
+**Check the Save button.**
 
-## 步骤4
-重投影检验标定结果
+At this point, the image corresponding to the current laser will pop up. You need to draw a small rectangle. After completing the selection, a feature point corresponding to the coordinate point will be detected and displayed. Then, press the spacebar in the image window. The window will close, and the data will be automatically saved in the `data/data_v2.txt` folder in the format **x y u v**.
+
+## Step 3
+Calibration:
+
+Copy the `data/data_v2.txt` file and rename it to `data.txt`.
 
 ```
-roslaunch camera_laser_calibration reprojection_test.launch
+roslaunch camera_laser_calibration calibration.launch image_topic:=PATH_TO_YOUR_DATASET
 ```
-会自动启动rviz，重投影图像是以rosmsg消息发布的
-![demo0](results/rotation.gif)
+
+Calibration result:
+```
+Tcl: The result is the extrinsic parameters from the lidar to the camera, which will be automatically saved in the `data` folder.
+```
+
+![reprojection](results/optimization_result_2.png)
