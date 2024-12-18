@@ -76,6 +76,14 @@ As part of the calibration process, you need to provide your camera's intrinsic 
 - **cx**: Principal point x-coordinate.
 - **cy**: Principal point y-coordinate.
 
+The intrinsic matrix can be represented as:
+```
+K = [ fx  0  cx ]
+    [  0  fy  cy ]
+    [  0   0   1 ]
+```
+Intrinsic calibration also helps determine the scale of the image and corrects for any imperfections in the camera's optical system, such as skew.
+
 ### Distortion Parameters:
 - **k1**: Radial distortion coefficient 1.
 - **k2**: Radial distortion coefficient 2.
@@ -107,6 +115,7 @@ Finally, you will see the following two screens in `rviz` and `rqt`, indicating 
 ![](how_to_use_imgs/img1.png)
 
 And also it is extracting the intrinsic value of the camera
+
 ![](results/intrinsic.png)
 
 
@@ -143,4 +152,19 @@ Calibration result:
 Tcl: The result is the extrinsic parameters from the lidar to the camera, which will be automatically saved in the `data` folder.
 ```
 
+For extrinsic calibration, you need to define the transformation from the camera to the 2D LiDAR. This transform specifies the spatial relationship between the two sensors and is critical for aligning their respective data streams. The transformation is typically represented as:
+
+- **Rotation Matrix (R)**: Defines the orientation of the camera relative to the LiDAR.
+- **Translation Vector (t)**: Specifies the position of the camera relative to the LiDAR.
+
+In this case, we are working with the camera-to-LiDAR transformation, which aligns the coordinate systems of a camera and a LiDAR sensor. This is crucial for sensor fusion tasks, allowing 3D LiDAR data to be matched with 2D images from the camera.
+The transformation is represented by a 4x4 matrix:
+
+```
+T=[R 0]
+  [t 1]
+```
+
 ![reprojection](results/optimization_result_2.png)
+
+
