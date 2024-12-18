@@ -22,6 +22,34 @@ This repository can calibrate both lidar and radar with a camera. However, for t
 - OpenCV 3
 - Ceres Solver
 
+# Setup Instructions
+
+To get started, you need to set up your environment. The requirements include Ubuntu 16 and ROS-Kinetic. To simplify this process, you can use a Docker container by running the following command:
+
+```
+xhost +local:docker
+docker run -it --rm \
+    --name ros_kinetic_gui \
+    -e DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -v $HOME:/home/$USER \
+    ubuntu:16.04 bash -c "
+    apt-get update && apt-get install -y curl gnupg2 lsb-release && \
+    echo 'deb http://packages.ros.org/ros/ubuntu xenial main' > /etc/apt/sources.list.d/ros-latest.list && \
+    curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add - && \
+    apt-get update && apt-get install -y ros-kinetic-desktop-full && \
+    echo 'source /opt/ros/kinetic/setup.bash' >> ~/.bashrc && \
+    bash"
+```
+
+Next, you need to install Ceres Solver. Use the command below:
+
+```
+sudo apt update
+sudo apt install -y cmake libgoogle-glog-dev libgflags-dev libeigen3-dev libsuitesparse-dev
+```
+
+
 # How to Use
 
 ## Step 0:
@@ -31,15 +59,31 @@ Place the extracted package into a ROS workspace and compile it using the follow
 catkin_make --pkg camera_laser_calibration
 ```
 
-If you encounter an error related to `cv_bridge`, uncomment line 12 in `CMakeLists.txt`.
-If you are prompted that `ceres` is not installed, follow the official instructions to install it.
-
 ## Step 1:
 Go to your ROS workspace:
 
 ```
 source devel/setup.bash
 ```
+
+## step 2:
+
+As part of the calibration process, you need to provide your camera's intrinsic and distortion parameters. These values must be added to the configuration file located at `./config/config.yaml`.
+
+### Intrinsic Parameters:
+- **fx**: Focal length in the x-axis.
+- **fy**: Focal length in the y-axis.
+- **cx**: Principal point x-coordinate.
+- **cy**: Principal point y-coordinate.
+
+### Distortion Parameters:
+- **k1**: Radial distortion coefficient 1.
+- **k2**: Radial distortion coefficient 2.
+- **p1**: Tangential distortion coefficient 1.
+- **p2**: Tangential distortion coefficient 2.
+
+Ensure these parameters reflect your specific camera setup to achieve accurate calibration.
+
 
 Then run:
 
@@ -62,9 +106,13 @@ Finally, you will see the following two screens in `rviz` and `rqt`, indicating 
 
 ![](how_to_use_imgs/img1.png)
 
+And also it is extracting the intrinsic value of the camera
+![](results/intrinsic.png)
+
+
 ## Step 2
 
-If you prefer not to read the text, you can directly watch the demonstration video `How_to_use.mp4` in the root directory.
+There is a demonstration video `How_to_use.mp4` in the root directory and also we have a textual explanation:
 
 **Pause the bag playback.**
 
