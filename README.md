@@ -28,7 +28,7 @@ To get started, you need to set up your environment. The requirements include Ub
 
 ```
 xhost +local:docker
-docker run -it --rm \
+docker run -it  \
     --name ros_kinetic_gui \
     -e DISPLAY=$DISPLAY \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
