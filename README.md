@@ -1,170 +1,248 @@
-## Camera-Lidar Calibration Tool ROS Version.
+Camera-LiDAR Calibration: Step-by-Step Guide
+============================================
 
-Author: xinliangzhong (xinliangzhong@foxmail.com)
+This repository offers a detailed walkthrough for calibrating a 2D LiDAR with a monocular camera using ROS Kinetic within a Docker environment. It encompasses setup instructions, calibration procedures, and troubleshooting tips to ensure a smooth replication of the calibration process.
 
-![demo0](results/corner_detect_2.png)
+Table of Contents
+-----------------
 
+*   [Prerequisites](#prerequisites)
+    
+*   [Docker Setup](#docker-setup)
+    
+*   [ROS Workspace Setup](#ros-workspace-setup)
+    
+*   [Building the Calibration Package](#building-the-calibration-package)
+    
+*   [Running the Calibration Process](#running-the-calibration-process)
+    
+*   [Collecting Calibration Data](#collecting-calibration-data)
+    
+*   [Performing Calibration](#performing-calibration)
+    
+*   [Troubleshooting](#troubleshooting)
+    
+*   [Acknowledgments](#acknowledgments)
+    
 
-This repository can calibrate both lidar and radar with a camera. However, for this test, calibration was only performed between the lidar and the camera. For radar-camera calibration, please refer to the [original repository](https://github.com/TurtleZhong/camera_lidar_calibration_v2)(#).
+Prerequisites
+-------------
 
-## Hardware Used:
+*   **Operating System**: Ubuntu 16.04 LTS
+    
+*   **Docker**: Installed and configured
+    
+*   **Hardware**:
+    
+    *   Intel RealSense D435i camera
+        
+    *   YDLIDAR X4PRO LiDAR
+        
+*   **Software**:
+    
+    *   ROS Kinetic
+        
+    *   OpenCV 3.4
+        
+    *   Ceres Solver
+        
+    *   PCL (Point Cloud Library)
+        
 
-- **Camera**: Intel RealSense D435i
-- **Lidar**: YDLIDAR X4PRO (2D)
+Docker Setup
+------------
 
-<img src="results/arcpro2.png" alt="Description" width="500" />
+1.  Pull the Ubuntu 16.04 Image:
 
+``` docker pull ubuntu:16.04 ```
+    
+2.  Run the Docker Container:
 
-# Prerequisites
+    ```
+    docker run -it --name camera_lidar \
+      -e DISPLAY=$DISPLAY \
+      -v /tmp/.X11-unix:/tmp/.X11-unix \
+      -v $HOME:/home/$USER \
+        ubuntu:16.04 bash \
+    ```
 
-- Ubuntu 16.04 LTS (tested on this specific version)
-- ROS Kinetic
-- OpenCV 3
-- Ceres Solver
+    **Note**: Ensure X11 forwarding is enabled to allow GUI applications like RViz to display.
+    
+3.  Instal ROS Kinetic
+    ```
+    apt update && apt install -y curl gnupg2 lsb-release
+    echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros-latest.list
+    curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+    apt update && apt install -y ros-kinetic-desktop-full
+    source /opt/ros/kinetic/setup.bash
+    ```
 
-# Setup Instructions
+    
+4.  Install Additional Dependencies
+    ```
+    apt install -y git vim python-pip tmux
+    apt install -y cmake libgoogle-glog-dev libgflags-dev libeigen3-dev libsuitesparse-dev
+    ```
+    
+5.  Install OpenCV 3.4 and Ceres Solver
+    **Note**: Ensure that OpenCV and Ceres are properly installed and their paths are correctly set.
+    
+    *   **OpenCV 3.4**: Follow the official OpenCV installation guide for version 3.4.
+        
+    *   **Ceres Solver**: Follow the official Ceres Solver installation guide.
+        
 
-To get started, you need to set up your environment. The requirements include Ubuntu 16 and ROS-Kinetic. To simplify this process, you can use a Docker container by running the following command:
+ROS Workspace Setup
+-------------------
 
+1.  Create Catkin Workspace
+    ```
+    mkdir -p ~/catkin\_ws/src
+    cd ~/catkin\_ws/src
+    ```
+    
+2.  Clone the Calibration Repository
+    ```
+    git clone https://github.com/airou-lab/camera\_lidar\_calibration\_v2.git
+    cd ..
+    ```
+    
+3.  Build the workspace
+    ```
+    catkin\_makesource devel/setup.bash
+    ```
+
+    **Note**: If you encounter errors related to missing packages, ensure all dependencies are installed and sourced correctly.
+    
+
+Building the Calibration Package
+--------------------------------
+
+1.  Navigate to the Package Directory
+   ```
+    cd ~/catkin_ws/src/camera_lidar_calibration_v2
+   ```
+2. Verify and Edit CMakeLists.txt (Ensure that all necessary dependencies are included)
 ```
-xhost +local:docker
-docker run -it  \
-    --name ros_kinetic_gui \
-    -e DISPLAY=$DISPLAY \
-    -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -v $HOME:/home/$USER \
-    ubuntu:16.04 bash -c "
-    apt-get update && apt-get install -y curl gnupg2 lsb-release && \
-    echo 'deb http://packages.ros.org/ros/ubuntu xenial main' > /etc/apt/sources.list.d/ros-latest.list && \
-    curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add - && \
-    apt-get update && apt-get install -y ros-kinetic-desktop-full && \
-    echo 'source /opt/ros/kinetic/setup.bash' >> ~/.bashrc && \
-    bash"
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  rospy
+  std_msgs
+  sensor_msgs
+  cv_bridge
+  image_transport
+  dynamic_reconfigure
+  tf
+  laser_geometry
+  message_filters
+)
+
+find_package(OpenCV 3 REQUIRED)
+find_package(PCL REQUIRED)
+find_package(Ceres REQUIRED)
+find_package(Eigen3 REQUIRED)
 ```
-
-Next, you need to install Ceres Solver. Use the command below:
-
+3. Build the Package:
 ```
-sudo apt update
-sudo apt install -y cmake libgoogle-glog-dev libgflags-dev libeigen3-dev libsuitesparse-dev
-```
-
-
-# How to Use
-
-## Step 0:
-Place the extracted package into a ROS workspace and compile it using the following command:
-
-```
-catkin_make --pkg camera_laser_calibration
-```
-
-## Step 1:
-Go to your ROS workspace:
-
-```
+cd ~/catkin_ws
+catkin_make
 source devel/setup.bash
 ```
+**Note:** Address any build errors by ensuring all dependencies are correctly installed and paths are properly set.
 
-## step 2:
 
-As part of the calibration process, you need to provide your camera's intrinsic and distortion parameters. These values must be added to the configuration file located at `./config/config.yaml`.
+Running the Calibration Process
+-------------------------------
 
-### Intrinsic Parameters:
-- **fx**: Focal length in the x-axis.
-- **fy**: Focal length in the y-axis.
-- **cx**: Principal point x-coordinate.
-- **cy**: Principal point y-coordinate.
-
-The intrinsic matrix can be represented as:
+1.  Start ROS Core
+   ```roscore```
+    
+2.  Launch the Calibration Node and RViz
+In a new terminal:
 ```
-K = [ fx  0  cx ]
-    [  0  fy  cy ]
-    [  0   0   1 ]
-```
-Intrinsic calibration also helps determine the scale of the image and corrects for any imperfections in the camera's optical system, such as skew.
-
-### Distortion Parameters:
-- **k1**: Radial distortion coefficient 1.
-- **k2**: Radial distortion coefficient 2.
-- **p1**: Tangential distortion coefficient 1.
-- **p2**: Tangential distortion coefficient 2.
-
-Ensure these parameters reflect your specific camera setup to achieve accurate calibration.
-
-
-Then run:
+roslaunch camera_laser_calibration collect_laser_image_data.launch image_topic:=/camera/color/image_raw
 
 ```
-roslaunch camera_laser_calibration collect_laser_image_data.launch image_topic:=PATH_TO_YOUR_DATASET
+**Note:** Ensure that the image_topic parameter matches the topic published by your camera.
+
+3.  Play the ROS Bag File:
+In another terminal:
 ```
-
-Navigate to the directory of the bag file you want to use for calibration and execute:
-
+rosbag play --pause your_bag_file.bag
 ```
-rosbag play --pause XXX.bag
+**Note:** Use the --pause option to control playback and collect data at specific timestamps.
+
+
+Collecting Calibration Data
+---------------------------
+1. Set Laser Coordinates:
+
+In a new terminal:
 ```
-
-Use the spacebar to control the playback and pause of the bag file.
-
-Open a new terminal and start `rqt`.
-Select **Plungs/Configuration/Dynamic Reconfiguration**.
-
-Finally, you will see the following two screens in `rviz` and `rqt`, indicating success. In `rviz`, images and laser-colored lines appear, and in `rqt`, the control interface is displayed.
-
-![](how_to_use_imgs/img1.png)
-
-And also it is extracting the intrinsic value of the camera
-
-![](results/intrinsic.png)
-
-
-## Step 2
-
-There is a demonstration video `How_to_use.mp4` in the root directory and also we have a textual explanation:
-
-**Pause the bag playback.**
-
-Use the **2D Nav Goal** tool in the `rviz` toolbar to select laser/scan points. Once selected, the terminal where the calibration program was initially started will display output similar to the following:
+rosparam set /collect_laser_image_data/laser_coor "(x, y)"
 
 ```
-[ INFO] [1534164489.163120940]: Setting goal: Frame:laser, Position(**1.575, -0.752**, 0.000), Orientation(0.000, 0.000, -0.688, 0.725) = Angle: -1.518
+Replace (x, y) with the coordinates obtained from RViz when setting a 2D Nav Goal.
+
+2. Trigger Data Collection:
 ```
-
-Copy the highlighted portion to the clipboard.
-Switch to the `rqt` interface and paste it into the box next to `laser_coor`. For the above example, after pasting, it should display `1.575, -0.752`.
-
-**Check the Save button.**
-
-At this point, the image corresponding to the current laser will pop up. You need to draw a small rectangle. After completing the selection, a feature point corresponding to the coordinate point will be detected and displayed. Then, press the spacebar in the image window. The window will close, and the data will be automatically saved in the `data/data_v2.txt` folder in the format **x y u v**.
-
-## Step 3
-Calibration:
-
-Copy the `data/data_v2.txt` file and rename it to `data.txt`.
-
+rosparam set /collect_laser_image_data/Save true
 ```
-roslaunch camera_laser_calibration calibration.launch image_topic:=PATH_TO_YOUR_DATASET
+**Note:** This should open an image window where you can select the laser point.
+
+3. Select the Laser Point:
+
+- Draw a rectangle around the laser point in the image.
+
+- Press the spacebar to confirm the selection.
+
+The selected data will be saved to data/data_v2.txt.
+
+**Note:** Repeat this process for multiple points to improve calibration accuracy.
+        
+
+Performing Calibration
+----------------------
+
+1.  Launching the Calibration Node
 ```
-
-Calibration result:
+roslaunch camera_laser_calibration calibration.launch image_topic:=/camera/color/image_raw
 ```
-Tcl: The result is the extrinsic parameters from the lidar to the camera, which will be automatically saved in the `data` folder.
-```
+**Note:** Ensure that the image_topic parameter matches your camera's topic.
 
-For extrinsic calibration, you need to define the transformation from the camera to the 2D LiDAR. This transform specifies the spatial relationship between the two sensors and is critical for aligning their respective data streams. The transformation is typically represented as:
+2.  Review Calibration Results:
+The calibration results, including the transformation matrix, will be saved to data/data.txt.
+    
 
-- **Rotation Matrix (R)**: Defines the orientation of the camera relative to the LiDAR.
-- **Translation Vector (t)**: Specifies the position of the camera relative to the LiDAR.
+Troubleshooting
+---------------
 
-In this case, we are working with the camera-to-LiDAR transformation, which aligns the coordinate systems of a camera and a LiDAR sensor. This is crucial for sensor fusion tasks, allowing 3D LiDAR data to be matched with 2D images from the camera.
-The transformation is represented by a 4x4 matrix:
+*   **No Image Window Appears**:
+    
+    *   Ensure the ROS bag is playing and the image topic is active.
+        
+    *   Verify that the frame variable in the code is receiving image data.
+        
+*   **Data Not Saved to data\_v2.txt**:
+    
+    *   Confirm that the /Save parameter is set to true.
+        
+    *   Check for any errors in the terminal output.
+        
+*   **RViz Not Displaying Data**:
+    
+    *   Verify that the correct fixed frame is set in RViz.
+        
+    *   Ensure that the LiDAR and camera topics are active.
+        
+*   **Build Errors**:
+    
+    *   Check that all dependencies are installed.
+        
+    *   Ensure that the correct versions of OpenCV and Ceres Solver are used.
+        
 
-```
-T=[R 0]
-  [t 1]
-```
+Acknowledgments
+---------------
 
-![reprojection](results/optimization_result_2.png)
-
-
+This calibration tool is based on the work by [xinliangzhong](https://github.com/TurtleZhong/camera_lidar_calibration). Special thanks to the AIROU Lab at the University of Oklahoma for their contributions and support. Please refer to the previous iteration of the repository (https://github.com/airou-lab/camera_lidar_calibration_v2) or the Troubleshooting file in this repository
